@@ -11,5 +11,5 @@ helm repo add doubleu-labs https://labs.doubleu.codes/charts
 ## dns
 
 ```sh
-helm install dns doubleu-labs/dns
+helm --namespace=dns install dns doubleu-labs/dns
 ```
