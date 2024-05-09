@@ -1,0 +1,42 @@
+DNS services are now running on:
+{{- $portsList := list -}}
+{{- $configPorts := include "dns.configPorts" . | fromJson -}}
+{{- range $name, $innerDict := $configPorts -}}
+  {{- $portsList = append $portsList (dict "port" $innerDict.port "protocol" $innerDict.protocol "name" $name) -}}
+{{- end -}}
+{{- range $portsList }}
+- port: {{ .port }} ({{ .protocol }})
+{{- end }}
+
+{{- if .Values.certificate.existing.enabled -}}
+Encrypted DNS services are secured using the predefined secret "{{ .Values.certificate.existing.secretName }}"
+{{- end }}
+{{ if .Values.certificate.certManager.enabled }}
+Encrypted DNS services are secured using a certificate provisioned by cert-manager.
+DNS Names:
+- {{ default (include "dns.fullname" .) .Values.service.name }}.{{ .Release.Namespace }}.svc.{{ default "cluster.local" .Values.service.clusterDomain }}
+- {{ .Values.certificate.certManager.commonName }}
+{{- if .Values.certificate.certManager.subjectAltNames.dns }}
+{{ toYaml .Values.certificate.certManager.subjectAltNames.dns }}
+{{- end }}
+{{- if .Values.certificate.certManager.subjectAltNames.ipAddress }}
+IP Addresses:
+{{ toYaml .Values.certificate.certManager.subjectAltNames.ipAddress }}
+{{- end }}
+{{- end }}
+
+It can be accessed using the below input:
+{{- if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl -n {{ .Release.Namespace }} get service {{ template "dns.fullname" . }} -o jsonpath='{.spec.ports[0].nodePort}')
+  export NODE_IP=$(kubectl -n {{ .Release.Namespace }} get node -o jsonpath='{.items[0].status.address[0].address}')
+  echo "$NODE_IP:$NODE_PORT"
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status by running 'kubectl -n {{ .Release.Namespace }} get service -w {{ default (include "dns.fullname" .) .Values.service.name }}'
+
+  export SERVICE_IP=$(kubectl -n {{ .Release.Namespace }} get service {{ template "dns.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo $SERVICE_IP
+{{- else if contains "ClusterIP" .Values.service.type }}
+  "{{ template "dns.fullname" . }}.{{ .Release.Namespace }}.svc.{{ default "cluster.local" .Values.service.clusterDomain }}"
+  from within the cluster
+{{- end }}

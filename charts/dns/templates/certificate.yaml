@@ -1,0 +1,38 @@
+{{- if and .Values.certificate.existing.enabled .Values.certificate.certManager.enabled -}}
+{{- fail "\n\nCannot enable existing certificate secret and certManager simultaneously" -}}
+{{- end -}}
+{{- if .Values.certificate.certManager.enabled -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "dns.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "dns.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Release.Name }}-tls-certificate
+  usages:
+  - server auth
+  - client auth
+  commonName: {{ required "certificate.certManager.commonName must be defined" .Values.certificate.certManager.commonName }}
+  dnsNames:
+  - {{ .Values.certificate.certManager.commonName }}
+  - {{ default (include "dns.fullname" .) .Values.service.name }}.{{ .Release.Namespace }}.svc.{{ default "cluster.local" .Values.service.clusterDomain }}
+  {{- if .Values.certificate.certManager.subjectAltNames.dns -}}
+  {{ toYaml .Values.certificate.certManager.subjectAltNames.dns | nindent 2 }}
+  {{- end }}
+  {{-  if .Values.certificate.certManager.subjectAltNames.ipAddress }}
+  ipAddresses:
+  {{- toYaml .Values.certificate.certManager.subjectAltNames.ipAddress | nindent 2 }}
+  {{- end }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  duration: {{ .Values.certificate.certManager.duration }}
+  renewBefore: {{ .Values.certificate.certManager.renewBefore }}
+  revisionHistoryLimit: {{ .Values.certificate.certManager.revisionHistoryLimit }}
+  issuerRef:
+    name: {{ .Values.certificate.certManager.issuer.name }}
+    kind: {{ .Values.certificate.certManager.issuer.kind }}
+    group: {{ .Values.certificate.certManager.issuer.group }}
+{{- end -}}
