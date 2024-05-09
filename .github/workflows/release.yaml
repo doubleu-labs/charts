@@ -1,0 +1,42 @@
+---
+name: Release Charts
+on:
+  push:
+    branches:
+    - master
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: azure/setup-helm@v4
+    - uses: helm/chart-releaser-action@main
+      with:
+        install_only: true
+    - run: |
+        mkdir dist
+        for chart in $(ls -d charts/*/); do
+          cr package $chart --package-path dist
+        done
+        helm repo index --url https://labs.doubleu.codes/charts dist
+    - uses: wranders/markdown-to-pages-action@v0
+      with:
+        token: ${{ github.token }}
+        out-path-not-empty: true
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: dist
+  deploy:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - uses: actions/deploy-pages@v4
+      id: deployment
