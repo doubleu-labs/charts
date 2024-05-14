@@ -21,10 +21,13 @@ jobs:
           cr package $chart --package-path dist
         done
         helm repo index --url https://labs.doubleu.codes/charts dist
-    - uses: wranders/markdown-to-pages-action@v0
+    - uses: wranders/markdown-to-pages-action@v1
       with:
         token: ${{ github.token }}
-        out-path-not-empty: true
+        out_path_not_empty: true
+        files: |
+          README.md
+          ./charts/dns/README.md
     - uses: actions/upload-pages-artifact@v3
       with:
         path: dist
