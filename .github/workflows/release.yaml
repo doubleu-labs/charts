@@ -21,7 +21,7 @@ jobs:
           helm package $chart --destination $DIST
         done
         helm repo index --url https://labs.doubleu.codes/charts $DIST
-    - uses: wranders/markdown-to-pages-action@v1
+    - uses: wranders/markdown-to-pages-action@master
       with:
         token: ${{ github.token }}
         out_path: ${{ github.workspace }}/dist
