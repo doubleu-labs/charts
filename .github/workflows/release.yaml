@@ -1,6 +1,7 @@
 ---
 name: Release Charts
 on:
+  workflow_dispatch:
   push:
     branches:
     - master
@@ -12,13 +13,10 @@ jobs:
       with:
         fetch-depth: 0
     - uses: azure/setup-helm@v4
-    - uses: helm/chart-releaser-action@main
-      with:
-        install_only: true
     - run: |
         mkdir dist
         for chart in $(ls -d charts/*/); do
-          cr package $chart --package-path dist
+          helm package $chart --destination dist
         done
         helm repo index --url https://labs.doubleu.codes/charts dist
     - uses: wranders/markdown-to-pages-action@v1
