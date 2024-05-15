@@ -7,7 +7,7 @@ supports specifying `snippets` and configuring DoH/DoT certificates through
 The default container `ghcr.io/doubleu-labs/coredns` contains the following
 external plugins:
 
-- `filter`: [github.com/wranders/coredns-filter](https://github.com/wrander/coredns-filter)
+- `filter`: [github.com/wranders/coredns-filter](https://github.com/wranders/coredns-filter)
 - `netboxdns`: [github.com/doubleu-labs/coredns-netbox-plugin-dns](https://github.com/doubleu-labs/coredns-netbox-plugin-dns)
 
 ## Installing
