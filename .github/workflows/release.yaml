@@ -13,15 +13,18 @@ jobs:
       with:
         fetch-depth: 0
     - uses: azure/setup-helm@v4
-    - run: |
-        mkdir dist
+    - env:
+        DIST: ${{ github.workspace }}/dist
+      run: |
+        mkdir $DIST
         for chart in $(ls -d charts/*/); do
-          helm package $chart --destination dist
+          helm package $chart --destination $DIST
         done
-        helm repo index --url https://labs.doubleu.codes/charts dist
+        helm repo index --url https://labs.doubleu.codes/charts $DIST
     - uses: wranders/markdown-to-pages-action@v1
       with:
         token: ${{ github.token }}
+        out_path: ${{ github.workspace }}/dist
         out_path_not_empty: true
         files: |
           README.md
