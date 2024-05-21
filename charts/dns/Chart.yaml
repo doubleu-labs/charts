@@ -1,10 +1,10 @@
 apiVersion: v2
 name: dns
-version: "0.1.0"
+version: "0.1.1"
 description: DoubleU Labs DNS server
 type: application
 maintainers:
   - name: W Anders
     email: w@doubleu.codes
     url: https://www.doubleu.codes/
-appVersion: "0.1.0"
+appVersion: "0.1.1"
