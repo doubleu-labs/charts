@@ -56,7 +56,15 @@ spec:
         args:
         - -conf
         - /etc/coredns/Corefile
-        resources: {{ toYaml .Values.deployment.resources | nindent 10 }}
+        resources:
+          limits:
+            cpu: {{ .Values.deployment.resources.limits.cpu | quote }}
+            memory: {{ .Values.deployment.resources.limits.memory | quote }}
+            ephemeral-storage: {{ .Values.deployment.resources.limits.ephemeral-storage | quote }}
+          requests:
+            cpu: {{ .Values.deployment.resources.requests.cpu | quote }}
+            memory: {{ .Values.deployment.resources.requests.memory | quote }}
+            ephemeral-storage: {{ .Values.deployment.resources.requests.ephemeral-storage | quote }}
         ports: {{ include "dns.containerPorts" . }}
         {{- if .Values.deployment.livenessProbe.enabled }}
         livenessProbe:

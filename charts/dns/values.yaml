@@ -18,11 +18,13 @@ deployment:
   topologySpreadConstraints: []
   resources:
     limits:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 300m
+      memory: 512Mi
+      ephemeral-storage: 2Gi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 300m
+      memory: 512Mi
+      ephemeral-storage: 1Gi
   livenessProbe:
     enabled: true
     initialDelaySeconds: 60
