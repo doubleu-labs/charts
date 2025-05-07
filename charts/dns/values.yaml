@@ -20,11 +20,11 @@ deployment:
     limits:
       cpu: 300m
       memory: 512Mi
-      ephemeral-storage: 2Gi
+      ephemeralStorage: 2Gi
     requests:
       cpu: 300m
       memory: 512Mi
-      ephemeral-storage: 1Gi
+      ephemeralStorage: 1Gi
   livenessProbe:
     enabled: true
     initialDelaySeconds: 60
