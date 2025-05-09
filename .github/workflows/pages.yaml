@@ -7,6 +7,10 @@ on:
     - 'README.md'
     - '**/README.md'
   workflow_dispatch:
+env:
+  FILES: |
+    README.md
+    charts/dns/README.md
 jobs:
 ################################################################################
   build:
@@ -24,9 +28,7 @@ jobs:
         token: ${{ github.token }}
         out_path: ${{ github.workspace }}/dist
         out_path_not_empty: true
-        files: |
-          README.md
-          ./charts/dns/README.md
+        files: ${{ env.FILES }}
     #===========================================================================
     - name: Store Pages Artifact
       uses: actions/upload-pages-artifact@v3
