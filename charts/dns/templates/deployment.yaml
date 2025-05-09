@@ -29,6 +29,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ template "dns.serviceAccountName" }}
+      automountServiceAccountToken: false
       {{- if .Values.deployment.affinity }}
       affinity:
       {{- toYaml .Values.deployment.affinity | nindent 8 }}
@@ -65,6 +66,11 @@ spec:
             cpu: {{ .Values.deployment.resources.requests.cpu | quote }}
             memory: {{ .Values.deployment.resources.requests.memory | quote }}
             ephemeral-storage: {{ .Values.deployment.resources.requests.ephemeralStorage | quote }}
+        env:
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
         ports: {{ include "dns.containerPorts" . }}
         {{- if .Values.deployment.livenessProbe.enabled }}
         livenessProbe:
