@@ -2,16 +2,8 @@
 
 This repository contains Helm Charts used in DoubleU Labs.
 
-To add this repository:
+Charts are published and distributed using OCI.
 
-```sh
-helm repo add doubleu-labs https://labs.doubleu.codes/charts
-```
+The following Charts are available:
 
-## dns
-
-[`README`](./charts/dns/README.md)
-
-```sh
-helm --namespace=dns install dns doubleu-labs/dns
-```
+- [`dns`](./charts/dns/README.md)
