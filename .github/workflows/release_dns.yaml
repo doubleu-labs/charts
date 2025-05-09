@@ -1,9 +1,12 @@
 name: Release DNS OCI Image
 on:
+  push:
+    paths:
+    - 'dns/*'
+    - '!dns/README.md'
   workflow_dispatch:
 env:
   CHART: dns
-  DIST: dist
 jobs:
 ################################################################################
   release:
@@ -35,9 +38,7 @@ jobs:
         echo version="$VERSION" >> $GITHUB_OUTPUT
     #=========================================================================
     - name: Build Chart
-      run: |
-        mkdir dist
-        helm package charts/${{ env.CHART }}
+      run: helm package charts/${{ env.CHART }}
     #=========================================================================
     - name: Push Image to Registry
       run: |

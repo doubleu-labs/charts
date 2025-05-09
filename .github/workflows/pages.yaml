@@ -1,0 +1,48 @@
+name: Publish Pages
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - 'README.md'
+    - '**/README.md'
+  workflow_dispatch:
+jobs:
+################################################################################
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    #===========================================================================
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    #===========================================================================
+    - name: Build Pages
+      uses: wranders/markdown-to-pages-action@v1
+      with:
+        token: ${{ github.token }}
+        out_path: ${{ github.workspace }}/dist
+        out_path_not_empty: true
+        files: |
+          README.md
+          ./charts/dns/README.md
+    #===========================================================================
+    - name: Store Pages Artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: dist
+################################################################################
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    #===========================================================================
+    - uses: actions/deploy-pages@v4
+      id: deployment
