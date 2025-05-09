@@ -1,9 +1,11 @@
 name: Release DNS OCI Image
 on:
   push:
+    branches:
+    - master
     paths:
-    - 'dns/*'
-    - '!dns/README.md'
+    - 'charts/dns/*'
+    - '!charts/dns/README.md'
   workflow_dispatch:
 env:
   CHART: dns
