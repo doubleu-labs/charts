@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "nameOverride": {
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "certificate": {
+      "type": "object",
+      "properties": {
+        "commonName": {
+          "type": "string"
+        },
+        "privateKey": {
+          "type": "object",
+          "properties": {
+            "algorithm": {
+              "type": "string",
+              "default": "ECDSA"
+            },
+            "size": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "algorithm",
+            "size"
+          ]
+        },
+        "secretName": {
+          "type": "string"
+        },
+        "secretTemplate": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object"
+            },
+            "labels": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "annotations",
+            "labels"
+          ]
+        },
+        "duration": {
+          "type": "string"
+        },
+        "renewBefore": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "commonName",
+        "privateKey",
+        "secretName",
+        "secretTemplate",
+        "duration",
+        "renewBefore"
+      ]
+    },
+    "issuer": {
+      "type": "object",
+      "properties": {
+        "nameOverride": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [ "Issuer", "ClusterIssuer" ],
+          "default": "Issuer"
+        }
+      },
+      "required": [
+        "nameOverride",
+        "kind"
+      ]
+    }
+  },
+  "required": [
+    "nameOverride",
+    "fullnameOverride",
+    "certificate",
+    "issuer"
+  ],
+  "oneOf": [
+    {
+      "properties": {
+        "certificate": {
+          "properties": {
+            "privateKey": {
+              "properties": {
+                "algorithm": {
+                  "enum": [ "RSA" ]
+                },
+                "size": {
+                  "enum": [ 2048, 4096, 8192 ],
+                  "default": 2048
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "certificate": {
+          "properties": {
+            "privateKey": {
+              "properties": {
+                "algorithm": {
+                  "enum": [ "ECDSA" ]
+                },
+                "size": {
+                  "enum": [ 256, 384, 521 ],
+                  "default": 256
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "certificate": {
+          "properties": {
+            "privateKey": {
+              "properties": {
+                "algorithm": {
+                  "enum": [ "Ed25519" ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+

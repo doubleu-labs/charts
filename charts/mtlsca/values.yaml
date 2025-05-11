@@ -1,0 +1,19 @@
+
+nameOverride: ""
+fullnameOverride: ""
+
+certificate:
+  commonName: ""
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  secretName: ""
+  secretTemplate:
+    annotations: {}
+    labels: {}
+  duration: ""
+  renewBefore: ""
+
+issuer:
+  nameOverride: ""
+  kind: Issuer
