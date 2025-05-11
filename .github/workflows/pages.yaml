@@ -11,6 +11,7 @@ env:
   FILES: |
     README.md
     charts/dns/README.md
+    charts/mtlsca/README.md
 jobs:
 ################################################################################
   build:
