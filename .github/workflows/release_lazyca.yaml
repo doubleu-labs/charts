@@ -1,14 +1,14 @@
-name: Release MTLSCA OCI Image
+name: Release Lazy CA OCI Image
 on:
   push:
     branches:
     - master
     paths:
-    - 'charts/mtlsca/*'
-    - '!charts/mtlsca/README.md'
+    - 'charts/lazyca/*'
+    - '!charts/lazyca/README.md'
   workflow_dispatch:
 env:
-  CHART: mtlsca
+  CHART: lazyca
 jobs:
 ################################################################################
   release:
