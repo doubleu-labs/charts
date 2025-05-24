@@ -1,9 +1,0 @@
-apiVersion: cert-manager.io/v1
-kind: {{ .Values.issuer.kind }}
-metadata:
-  name: {{ default (include "mtlsca.fullname" .) .Values.issuer.nameOverride }}
-  namespace: {{ .Release.Namespace }}
-  labels: {{ include "mtlsca.labels" . | nindent 4 }}
-spec:
-  ca:
-    secretName:  {{ include "mtlsca.ca-certificate.secretName" . }}

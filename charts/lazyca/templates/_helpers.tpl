@@ -1,9 +1,9 @@
 
-{{- define "mtlsca.name" -}}
+{{- define "lazyca.name" -}}
   {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "mtlsca.fullname" -}}
+{{- define "lazyca.fullname" -}}
   {{- if .Values.fullnameOverride -}}
     {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
   {{- else -}}
@@ -16,17 +16,17 @@
   {{- end -}}
 {{- end -}}
 
-{{- define "mtlsca.labels" -}}
+{{- define "lazyca.labels" -}}
 app.kubernetes.io/instance: {{ .Release.Name | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Name | quote }}
-app.kubernetes.io/name: {{ include "mtlsca.name" . }}
+app.kubernetes.io/name: {{ include "lazyca.name" . }}
 helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 {{- end -}}
 
-{{- define "mtlsca.ca-certificate.secretName" -}}
+{{- define "lazyca.ca-certificate.secretName" -}}
   {{- if .Values.certificate.secretName -}}
     {{- .Values.certificate.secretName -}}
   {{- else -}}
-    {{- printf "%s-%s" (include "mtlsca.fullname" .) "ca-certificate" -}}
+    {{- printf "%s-%s" (include "lazyca.fullname" .) "certificate" -}}
   {{- end -}}
 {{- end -}}

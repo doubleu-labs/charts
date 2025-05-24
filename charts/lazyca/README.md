@@ -1,4 +1,4 @@
-# MTLS CA
+# Lazy CA
 
 This chart is built on top of [`cert-manager`](https://cert-manager.io/).
 
@@ -11,13 +11,13 @@ A self-signed CA and corrosponding `Issuer` are created.
 ## Installing
 
 ```sh
-helm install database-ca oci://ghcr.io/doubleu-labs/charts/mtlsca
+helm install database-ca oci://ghcr.io/doubleu-labs/charts/lazyca
 ```
 
 ## Usage
 
-The `Issuer` to use is `{{ .Release.Name }}-mtlsca`, unless the
-`issuer.nameOverride` value is set.
+The `Issuer` is the same as the release name, unless `issuer.nameOverride` value
+is set.
 
 Place this value in the `.spec.issuerRef.name` field of your `Certificate` or
 `CertificateRequest`:
@@ -36,7 +36,7 @@ spec:
     algorithm: ECDSA
     size: 256
   issuerRef:
-    name: database-ca-mtlsca
+    name: database-ca
     kind: Issuer
     group: cert-manager.io
 ```

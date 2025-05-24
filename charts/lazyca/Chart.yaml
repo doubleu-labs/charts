@@ -1,7 +1,7 @@
 apiVersion: v2
-name: mtlsca
+name: lazyca
 version: "0.1.0"
-description: DoubleU Labs MTLS CA
+description: DoubleU Labs Lazy CA
 type: application
 maintainers:
   - name: W Anders
