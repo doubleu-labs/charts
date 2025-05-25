@@ -1,6 +1,6 @@
 apiVersion: v2
 name: lazyca
-version: "0.1.0"
+version: "0.1.1"
 description: DoubleU Labs Lazy CA
 type: application
 maintainers:

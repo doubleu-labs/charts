@@ -2,9 +2,10 @@
 apiVersion: cert-manager.io/v1
 kind: {{ .Values.issuer.kind }}
 metadata:
-  name: {{ default (include "lazyca.fullname" .) .Values.issuer.nameOverride }}
-  namespace: {{ .Release.Namespace }}
-  labels: {{ include "lazyca.labels" . | nindent 4 }}
+  name: {{ default (include "lazyca.fullname" .) .Values.issuer.nameOverride | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "lazyca.labels" . | nindent 4 }}
 spec:
   ca:
-    secretName:  {{ include "lazyca.ca-certificate.secretName" . }}
+    secretName:  {{ include "lazyca.ca-certificate.secretName" . | quote }}

@@ -2,8 +2,9 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ include "lazyca.fullname" . }}-selfsigned
-  namespace: {{ .Release.Namespace }}
-  labels: {{ include "lazyca.labels" . | nindent 4 }}
+  name: {{ printf "%s-selfsigned" (include "lazyca.fullname" .) | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "lazyca.labels" . | nindent 4 }}
 spec:
   selfSigned: {}

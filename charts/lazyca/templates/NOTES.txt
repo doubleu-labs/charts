@@ -1,0 +1,7 @@
+Your LazyCA instance is installed!
+
+Issuer Name:     {{ default (include "lazyca.fullname" .) .Values.issuer.nameOverride }}
+Issuer Kind:     {{ .Values.issuer.kind }}
+Issuer Group:    cert-manager.io
+CA Secret Name:  {{ include "lazyca.ca-certificate.secretName" . }}
+---
