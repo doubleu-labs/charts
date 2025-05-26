@@ -1,3 +1,3 @@
-[{*.yaml,_helpers.tpl}]
+[{*.yaml,*.tpl}]
 indent_style = space
 indent_size = 2
