@@ -1,147 +1,119 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "nameOverride": {
-      "type": "string"
-    },
-    "fullnameOverride": {
-      "type": "string"
-    },
     "certificate": {
-      "type": "object",
+      "additionalProperties": false,
       "properties": {
         "commonName": {
-          "type": "string"
+          "default": null,
+          "title": "commonName",
+          "type": ["null","string"]
+        },
+        "duration": {
+          "default": null,
+          "title": "duration",
+          "type": ["null","string"]
         },
         "privateKey": {
-          "type": "object",
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "algorithm": {
+                  "const": "ECDSA"
+                },
+                "size": {
+                  "enum": [256,384,521]
+                }
+              }
+            },
+            {
+              "properties": {
+                "algorithm": {
+                  "const": "RSA"
+                },
+                "size": {
+                  "enum": [2048,4096,8192]
+                }
+              }
+            }
+          ],
           "properties": {
             "algorithm": {
-              "type": "string",
-              "default": "ECDSA"
+              "default": "ECDSA",
+              "title": "algorithm",
+              "type": "string"
             },
             "size": {
+              "default": 384,
+              "title": "size",
               "type": "integer"
             }
           },
-          "required": [
-            "algorithm",
-            "size"
-          ]
+          "title": "privateKey",
+          "type": "object"
+        },
+        "renewBefore": {
+          "default": null,
+          "title": "renewBefore",
+          "type": ["null","string"]
         },
         "secretName": {
-          "type": "string"
+          "default": null,
+          "title": "secretName",
+          "type": ["null","string"]
         },
         "secretTemplate": {
-          "type": "object",
+          "additionalProperties": false,
           "properties": {
             "annotations": {
+              "additionalProperties": true,
+              "title": "annotations",
               "type": "object"
             },
             "labels": {
+              "additionalProperties": true,
+              "title": "labels",
               "type": "object"
             }
           },
-          "required": [
-            "annotations",
-            "labels"
-          ]
-        },
-        "duration": {
-          "type": "string"
-        },
-        "renewBefore": {
-          "type": "string"
+          "title": "secretTemplate",
+          "type": "object"
         }
       },
-      "required": [
-        "commonName",
-        "privateKey",
-        "secretName",
-        "secretTemplate",
-        "duration",
-        "renewBefore"
-      ]
+      "title": "certificate",
+      "type": "object"
+    },
+    "fullnameOverride": {
+      "default": null,
+      "required": [],
+      "title": "fullnameOverride",
+      "type": ["null","string"]
     },
     "issuer": {
-      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "nameOverride": {
-          "type": "string"
-        },
         "kind": {
+          "default": "Issuer",
+          "title": "kind",
           "type": "string",
-          "enum": [ "Issuer", "ClusterIssuer" ],
-          "default": "Issuer"
+          "enum": ["ClusterIssuer","Issuer"]
+        },
+        "nameOverride": {
+          "default": null,
+          "title": "nameOverride",
+          "type": ["null","string"]
         }
       },
-      "required": [
-        "nameOverride",
-        "kind"
-      ]
+      "title": "issuer",
+      "type": "object"
+    },
+    "nameOverride": {
+      "default": null,
+      "title": "nameOverride",
+      "type": ["null", "string"]
     }
   },
-  "required": [
-    "nameOverride",
-    "fullnameOverride",
-    "certificate",
-    "issuer"
-  ],
-  "oneOf": [
-    {
-      "properties": {
-        "certificate": {
-          "properties": {
-            "privateKey": {
-              "properties": {
-                "algorithm": {
-                  "enum": [ "RSA" ]
-                },
-                "size": {
-                  "enum": [ 2048, 4096, 8192 ],
-                  "default": 2048
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "properties": {
-        "certificate": {
-          "properties": {
-            "privateKey": {
-              "properties": {
-                "algorithm": {
-                  "enum": [ "ECDSA" ]
-                },
-                "size": {
-                  "enum": [ 256, 384, 521 ],
-                  "default": 256
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "properties": {
-        "certificate": {
-          "properties": {
-            "privateKey": {
-              "properties": {
-                "algorithm": {
-                  "enum": [ "Ed25519" ]
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  ]
+  "type": "object"
 }
-
