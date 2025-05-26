@@ -1,4 +1,4 @@
-Your LazyCA instance is installed!
+Your Lazy CA instance is installed!
 
 Issuer Name:     {{ default (include "lazyca.fullname" .) .Values.issuer.nameOverride }}
 Issuer Kind:     {{ .Values.issuer.kind }}
