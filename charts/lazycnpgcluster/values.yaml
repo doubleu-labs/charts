@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=values.schema.json
+
+nameOverride: ""
+fullnameOverride: ""
+
+database:
+  name: ""
+  owner: ""
+  initdb: false
+  description: ""
+  instances: 3
+  authRecords: []
+  storage:
+    size: 2Gi
+    storageClass: ""
+  walStorage:
+    size: 1Gi
+    storageClass: ""
+
+clusterDomain: cluster.local
+
+tls:
+  enabled: false
+  generateOwnerCert: true
+  clientCA:
+    secretName: ""
+    issuer:
+      name: ""
+      kind: Issuer
+      group: cert-manager.io
+  serverCA:
+    secretName: ""
+    issuer:
+      name: ""
+      kind: Issuer
+      group: cert-manager.io

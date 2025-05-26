@@ -1,0 +1,41 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ default .Release.Name .Values.nameOverride | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "lazycnpgcluster.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.database.initdb }}
+  bootstrap:
+    initdb:
+      database: {{ .Values.database.name | quote }}
+      owner: {{ .Values.database.owner | quote }}
+  {{- end }}
+  {{- if .Values.tls.enabled }}
+  certificates:
+    clientCASecret: {{ .Values.tls.clientCA.secretName | quote }}
+    replicationTLSSecret: {{ printf "%s-replication-client-certficate" (include "lazycnpgcluster.fullname" .) | quote }}
+    serverCASecret: {{ .Values.tls.serverCA.secretName | quote }}
+    serverTLSSecret: {{ printf "%s-server-certficate" (include "lazycnpgcluster.fullname" .) | quote }}
+  {{- end }}
+  {{- if .Values.database.description }}
+  description: {{ .Values.database.description | quote }}
+  {{- end }}
+  instances: {{ .Values.database.instances }}
+  {{- if or .Values.database.authRecords .Values.tls.enabled }}
+  postgresql:
+    pg_hba:
+    {{- include "lazycnpgcluster.renderHBA" . | nindent 4 }}
+  {{- end }}
+  storage:
+    size: {{ .Values.database.storage.size | quote }}
+    {{- if .Values.database.storage.storageClass }}
+    storageClass: {{ .Values.database.storage.storageClass | quote }}
+    {{- end }}
+  walStorage:
+    size: {{ .Values.database.walStorage.size | quote }}
+    {{- if .Values.database.walStorage.storageClass }}
+    storageClass: {{ .Values.database.walStorage.storageClass | quote }}
+    {{- end }}

@@ -1,0 +1,19 @@
+Your Lazy CloudNative-PG Cluster is installed!
+---
+{{- $n := .Release.Name }}
+{{- $ns := .Release.Namespace }}
+{{- $cd := .Values.clusterDomain }}
+Read-Only Service:            {{ printf "%s-r.%s.svc.%s" $n $ns $cd | quote }}
+Hot-Standby Replicas Service: {{ printf "%s-ro.%s.svc.%s" $n $ns $cd | quote }}
+Primary Read-Write Service:   {{ printf "%s-rw.%s.svc.%s" $n $ns $cd | quote }}
+{{- if .Values.database.initdb }}
+InitDB: The {{ .Values.database.name | quote }} database was initialized with owner {{ .Values.database.owner | quote }}.
+{{- end -}}
+{{- if .Values.tls.enabled }}
+Client certificate authentication enabled!
+{{- if .Values.tls.generateOwnerCert }}
+Certificate generated on {{ .Values.database.name | quote }} database for user {{ .Values.database.owner | quote }}.
+Certificate Secret Name: {{ printf "%s-%s-%s-client-certificate" .Release.Name .Values.database.name .Values.database.owner | quote }}
+{{- end }}
+{{- end }}
+---

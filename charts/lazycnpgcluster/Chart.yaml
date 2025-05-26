@@ -1,0 +1,10 @@
+apiVersion: v2
+name: lazycnpgcluster
+version: "0.1.0"
+description: DoubleU Labs Lazy CloudNativePG Cluster
+type: application
+maintainers:
+  - name: W Anders
+    email: w@doubleu.codes
+    url: https://www.doubleu.codes/
+appVersion: "0.0.0"

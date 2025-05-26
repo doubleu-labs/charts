@@ -12,6 +12,7 @@ env:
     README.md
     charts/dns/README.md
     charts/lazyca/README.md
+    charts/lazycnpgcluster/README.md
 jobs:
 ################################################################################
   build:

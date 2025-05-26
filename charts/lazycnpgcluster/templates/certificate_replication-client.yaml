@@ -1,0 +1,28 @@
+{{- if .Values.tls.enabled -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ printf "%s-replication-client" (include "lazycnpgcluster.fullname" .) }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "lazycnpgcluster.labels" . | nindent 4 }}
+spec:
+  secretName: {{ printf "%s-replication-client-certficate" (include "lazycnpgcluster.fullname" .) | quote }}
+  usages:
+  - "client auth"
+  commonName: "streaming_replica"
+  privateKey:
+    algorithm: "ECDSA"
+    size: 256
+  issuerRef:
+    {{- with .Values.tls.clientCA }}
+    name: {{ .issuer.name | quote }}
+    kind: {{ .issuer.kind | quote }}
+    group: {{ .issuer.group | quote }}
+    {{- end }}
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+      {{- include "lazycnpgcluster.labels" . | nindent 6 }}
+{{- end -}}

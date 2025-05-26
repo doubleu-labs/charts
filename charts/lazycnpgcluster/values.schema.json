@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "clusterDomain": {
+      "default": "cluster.local",
+      "title": "clusterDomain",
+      "type": "string"
+    },
+    "database": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "initdb": {
+            "const": true
+          }
+        }
+      },
+      "properties": {
+        "authRecords": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "initdb": {
+          "default": false,
+          "type": "boolean"
+        },
+        "instances": {
+          "minimum": 3,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "storage": {
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "default": "2Gi",
+              "type": "string"
+            },
+            "storageClass": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "walStorage": {
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "default": "1Gi",
+              "type": "string"
+            },
+            "storageClass": {
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "then": {
+        "properties": {
+          "name": {
+            "minLength": 1
+          },
+          "owner": {
+            "minLength": 1
+          }
+        }
+      },
+      "title": "database",
+      "type": "object"
+    },
+    "fullnameOverride": {
+      "default": "",
+      "title": "fullnameOverride",
+      "type": "string"
+    },
+    "nameOverride": {
+      "default": "",
+      "title": "nameOverride",
+      "type": "string"
+    },
+    "tls": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "properties": {
+        "clientCA": {
+          "additionalProperties": false,
+          "properties": {
+            "issuer": {
+              "additionalProperties": false,
+              "properties": {
+                "group": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "Issuer",
+                    "ClusterIssuer"
+                  ],
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "secretName": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "generateOwnerCert": {
+          "default": true,
+          "type": "boolean"
+        },
+        "serverCA": {
+          "additionalProperties": false,
+          "properties": {
+            "issuer": {
+              "additionalProperties": false,
+              "properties": {
+                "group": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "Issuer",
+                    "ClusterIssuer"
+                  ],
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "secretName": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "then": {
+        "properties": {
+          "clientCA": {
+            "properties": {
+              "issuer": {
+                "properties": {
+                  "name": {
+                    "minLength": 1
+                  }
+                }
+              },
+              "secretName": {
+                "minLength": 1
+              }
+            }
+          },
+          "serverCA": {
+            "properties": {
+              "issuer": {
+                "properties": {
+                  "name": {
+                    "minLength": 1
+                  }
+                }
+              },
+              "secretName": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "title": "tls",
+      "type": "object"
+    }
+  },
+  "type": "object"
+}

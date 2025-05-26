@@ -1,0 +1,38 @@
+{{- if .Values.tls.enabled -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ printf "%s-server" (include "lazycnpgcluster.fullname" .) | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "lazycnpgcluster.labels" . | nindent 4 }}
+spec:
+  secretName: {{ printf "%s-server-certficate" (include "lazycnpgcluster.fullname" .) | quote }}
+  usages:
+  - "server auth"
+  commonName: {{ .Values.database.name | quote }}
+  dnsNames:
+  {{- $n := .Release.Name }}
+  {{- $ns := .Release.Namespace }}
+  {{- $cd := .Values.clusterDomain }}
+  {{- range tuple "r" "ro" "rw" }}
+  - {{ printf "%s-%s" $n . | quote }}
+  - {{ printf "%s-%s.%s" $n . $ns | quote }}
+  - {{ printf "%s-%s.%s.svc" $n . $ns | quote }}
+  - {{ printf "%s-%s.%s.svc.%s" $n . $ns $cd | quote }}
+  {{- end }}
+  privateKey:
+    algorithm: "ECDSA"
+    size: 256
+  issuerRef:
+    {{- with .Values.tls.serverCA }}
+    name: {{ .issuer.name | quote }}
+    kind: {{ .issuer.kind | quote }}
+    group: {{ .issuer.group | quote }}
+    {{- end }}
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+      {{- include "lazycnpgcluster.labels" . | nindent 6 }}
+{{- end -}}
