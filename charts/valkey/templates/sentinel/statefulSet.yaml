@@ -1,0 +1,141 @@
+{{- if and
+  (eq .Values.architecture "replica")
+  .Values.replica.sentinel.enabled
+-}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "valkey.objectName" (list . "sentinel") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: sentinel
+    {{- include "valkey.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replica.sentinel.count }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: sentinel
+      {{- include "valkey.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "valkey.objectName" (list . "sentinel") }}
+  updateStrategy:
+    {{- toYaml .Values.updateStrategy.sentinel | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: sentinel
+        {{- include "valkey.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/conf: {{ include (print .Template.BasePath "/sentinel/configMap.yaml") . | sha256sum }}
+        {{- if .Values.auth.enabled }}
+        checksum/authAcl: {{ include (print .Template.BasePath "/configMap_acl-auth.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      serviceAccountName: {{ include "valkey.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      resources:
+        limits:
+          cpu: {{ .Values.resources.sentinel.limits.cpu }}
+          memory: {{ .Values.resources.sentinel.limits.memory }}
+          ephemeral-storage: {{ .Values.resources.sentinel.limits.ephemeralStorage }}
+        requests:
+          cpu: {{ .Values.resources.sentinel.requests.cpu }}
+          memory: {{ .Values.resources.sentinel.requests.memory }}
+          ephemeral-storage: {{ .Values.resources.sentinel.requests.ephemeralStorage }}
+      initContainers:
+        - name: copy-config
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/sbin/cp
+          args:
+            - /run/valkey/sentinel.conf
+            - /etc/valkey/sentinel.conf
+          volumeMounts:
+            - mountPath: /run/valkey
+              name: config
+            - mountPath: /etc/valkey
+              name: config-temp
+      containers:
+        - name: valkey
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/sbin/valkey-server
+          args:
+            - /etc/valkey/sentinel.conf
+            - --sentinel
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          volumeMounts:
+            - mountPath: /etc/valkey
+              name: config-temp
+            - mountPath: /data
+              name: data
+            {{- if or
+              .Values.tls.certManager.enabled
+              (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+              .Values.tls.existingSecret.sentinel
+            }}
+            - mountPath: /run/secrets/valkey/tls
+              name: tls
+            {{- end }}
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "sentinel") }}
+              {{- if .Values.auth.enabled }}
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "acl-auth") }}
+              {{- end }}
+        - name: config-temp
+          emptyDir: {}
+        {{- if or
+          .Values.tls.certManager.enabled
+          (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+          .Values.tls.existingSecret.sentinel
+        }}
+        - name: tls
+          {{- if .Values.tls.certManager.csiDriver }}
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/common-name: {{ include "valkey.objectName" (list . "sentinel") }}
+              csi.cert-manager.io/dns-names: {{ include "valkey.sentinel.dnsNames" . | fromJsonArray | join "," }}
+              csi.cert-manager.io/fs-group: "1000"
+              csi.cert-manager.io/issuer-kind: {{ .Values.tls.certManager.issuer.kind }}
+              csi.cert-manager.io/issuer-name: {{ required "CertManager Issuer Name is required" .Values.tls.certManager.issuer.name }}
+              csi.cert-manager.io/key-usages: client auth,server auth
+          {{- else }}
+          secret:
+            secretName: {{ coalesce .Values.tls.existingSecret.sentinel (include "valkey.objectName" (list . "sentinel-server-certificate")) }}
+          {{- end }}
+        {{- end }}
+        {{- if not .Values.persistence.sentinel.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.persistence.sentinel.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        {{- if .Values.persistence.sentinel.storageClass }}
+        storageClassName: {{ .Values.persistence.sentinel.storageClass }}
+        {{- end }}
+        accessModes:
+          {{- toYaml .Values.persistence.sentinel.modes | nindent 10 }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.sentinel.size }}
+  {{- end }}
+{{- end -}}

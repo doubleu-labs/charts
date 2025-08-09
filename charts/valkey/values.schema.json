@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "nameOverride": {
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "image": {
+      "$ref": "#/$defs/image"
+    },
+    "kubeClientImage": {
+      "$ref": "#/$defs/image"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type":  "boolean" },
+        "name": { "type": "string" },
+        "automountToken": { "type":  "boolean" }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clusterDomain": { "type": "string" },
+        "readWrite": { "$ref": "#/$defs/serviceSettings" },
+        "sentinel": { "$ref": "#/$defs/serviceSettings" }
+      },
+      "patternProperties": {
+        "^readOnly$": { "$ref": "#/$defs/serviceSettings" }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "$ref":  "#/$defs/persistenceSettings" },
+        "replica": { "$ref":  "#/$defs/persistenceSettings" },
+        "sentinel": { "$ref":  "#/$defs/persistenceSettings" },
+        "cluster": { "$ref":  "#/$defs/persistenceSettings" }
+      }
+    },
+    "architecture": {
+      "type": "string",
+      "enum": [ "standalone", "cluster", "replica" ]
+    },
+    "replica": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "replicas": { "type": "integer" },
+        "sentinel": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "count": { "type":  "integer" },
+            "quorum": { "type":  "integer" }
+          }
+        }
+      }
+    },
+    "cluster":  {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "init": { "type": "boolean" },
+        "primary": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "count": { "type": "integer" }
+          }
+        },
+        "replica": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "count": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "updateStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "$ref":  "#/$defs/updateStrategy" },
+        "replica": { "$ref":  "#/$defs/updateStrategy" },
+        "sentinel": { "$ref":  "#/$defs/updateStrategy" },
+        "cluster": { "$ref":  "#/$defs/updateStrategy" }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "$ref": "#/$defs/resources" },
+        "replica": { "$ref": "#/$defs/resources"},
+        "sentinel": { "$ref": "#/$defs/resources" },
+        "cluster": { "$ref": "#/$defs/resources" }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "adminName": { "type":  "string" },
+        "additionalUsers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enable": { "type":  "boolean" },
+            "labels": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "existingSecret": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": { "type":  "string" },
+            "replica": { "type":  "string" },
+            "sentinel": { "type":  "string" },
+            "cluster": { "type":  "string" }
+          }
+        },
+        "certManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type":  "boolean" },
+            "csiDriver": { "type":  "boolean" },
+            "issuer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type":  "string" },
+                "kind": { "type":  "string" },
+                "group": { "type":  "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "pullSecrets": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "serviceSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nameOverride": { "type":  "string" },
+        "port": { "type":  "integer" },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "patternProperties": {
+        "^type$": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+        }
+      }
+    },
+    "persistenceSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "size": { "type": "string" },
+        "storageClass": { "type": "string" },
+        "modes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ReadWriteOnce",
+              "ReadOnlyMany",
+              "ReadWriteMany",
+              "ReadWriteOncePod"
+            ]
+          }
+        }
+      }
+    },
+    "updateStrategy": {
+      "type": "object",
+      "patternProperties": {
+        "^type$": {
+          "type": "string",
+          "enum": [ "RollingUpdate", "OnDelete" ]
+        }
+      },
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "RollingUpdate" },
+            "rollingUpdate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxUnavailable": { "type": "integer" },
+                "maxSurge": { "type": "integer" },
+                "partition": { "type": "integer" }
+              }
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "OnDelete"
+            }
+          }
+        }
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limits": { "$ref": "#/$defs/resourceSet" },
+        "requests": { "$ref":  "#/$defs/resourceSet" }
+      }
+    },
+    "resourceSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "pattern": "^([0-9]+(\\.)?[0-9]*m?)$"
+        },
+        "memory": {
+          "type": "string",
+          "pattern": "^([0-9]+(k|K|m|M|g|G|ki|Ki|mi|Mi|gi|Gi)?)$"
+        },
+        "ephemeralStorage": {
+          "type": "string",
+          "pattern": "^([0-9]+(k|K|m|M|g|G|ki|Ki|mi|Mi|gi|Gi)?)$"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "valkey.serviceName" (list . "rw" .Values.service.readWrite.nameOverride ) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+  {{- if .Values.service.readWrite.annotations }}
+  annotations:
+    {{- toYaml .Values.service.readWrite.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.readWrite.type }}
+  ports:
+    - name: tcp-valkey
+      targetPort: valkey
+      port: {{ .Values.service.readWrite.port }}
+      protocol: TCP
+  selector:
+    access-mode-read-write: "true"

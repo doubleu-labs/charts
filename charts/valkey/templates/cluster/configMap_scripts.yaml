@@ -1,0 +1,70 @@
+{{- if eq .Values.architecture "cluster" -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "valkey.objectName" (list . "scripts") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+data:
+  init.sh: |-
+    #!/bin/bash
+    valkey-cli \
+      {{- if or
+        .Values.tls.existingSecret.cluster
+        .Values.tls.certManager.enabled
+        (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+      }}
+      --cert /run/secrets/valkey/tls/tls.crt \
+      --key /run/secrets/valkey/tls/tls.key \
+      --cacert /run/secrets/valkey/tls/ca.crt \
+      {{- end }}
+      --cluster create --cluster-yes \
+      --cluster-replicas {{ .Values.cluster.replica.count }} \
+      {{ include "valkey.cluster.getNodes" (list . " " false) }}
+  ping.sh: |-
+    #!/bin/bash
+    NODES={{ include "valkey.cluster.getNodes" (list . "," true) | quote }}
+    for node in ${NODES//,/ }; do
+      echo "PINGING ${node}"
+      valkey-cli -t 600 -u "${node}" \
+        {{- if or
+          .Values.tls.existingSecret.cluster
+          .Values.tls.certManager.enabled
+          (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+        }}
+        --cert /run/secrets/valkey/tls/tls.crt \
+        --key /run/secrets/valkey/tls/tls.key \
+        --cacert /run/secrets/valkey/tls/ca.crt \
+        {{- end }}
+        PING
+    done
+  update-ips.sh: |-
+    #!/bin/bash
+    CONF="/data/nodes.conf"
+    if [ -f ${CONF} ]; then
+      TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      cat $CONF | while read line || [[ -n $line ]]; do
+        echo $line | grep '{{ .Values.service.clusterDomain }}' &> /dev/null
+        if [ $? -ne 0 ]; then
+          continue
+        fi
+        OLD_IP=$(echo $line | cut -d' ' -f2 | cut -d',' -f1 | cut -d':' -f1)
+        NODE=$(echo $line | cut -d' ' -f2 | cut -d',' -f2 | cut -d'.' -f1)
+        kubectl --token=$TOKEN -n {{ .Release.Namespace }} wait --for=jsonpath='{.status.podIP}' pod/${NODE}
+        NEW_IP=$(kubectl --token=$TOKEN -n {{ .Release.Namespace }} get pod/${NODE} --template {{ printf "{{.status.podIP}}" | squote }})
+        if [ "${OLD_IP}" == "${NEW_IP}" ]; then
+          echo "\"${NODE}\" node IP is consistent with configuration"
+          continue
+        fi
+        echo "\"${NODE}\" node IP does not match"
+        echo "----- Old - ${OLD_IP}"
+        echo "----- New - ${NEW_IP}"
+        sed -ir "s/${OLD_IP}/${NEW_IP}/" $CONF
+        echo "\"${NODE}\" node IP updated"
+      done
+    else
+      echo "\"${CONF}\" does not exist; nothing to do"
+    fi
+{{- end -}}

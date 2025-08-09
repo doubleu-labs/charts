@@ -1,0 +1,156 @@
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/doubleu-labs/valkey
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+kubeClientImage:
+  repository: ghcr.io/doubleu-labs/kubeclient
+  tag: 1.32-uul.2
+  digest: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  automountToken: false
+
+service:
+  clusterDomain: cluster.local
+  readOnly:
+    nameOverride: ""
+    type: ClusterIP
+    port: 6379
+    annotations: {}
+  readWrite:
+    nameOverride: ""
+    type: ClusterIP
+    port: 6379
+    annotations: {}
+  sentinel:
+    nameOverride: ""
+    type: ClusterIP
+    port: 26379
+    annotations: {}
+
+persistence:
+  primary:
+    enabled: false
+    storageClass: ""
+    size: 10Gi
+    modes:
+      - ReadWriteOnce
+  replica:
+    enabled: false
+    storageClass: ""
+    size: 10Gi
+    modes:
+      - ReadWriteOnce
+  sentinel:
+    enabled: false
+    storageClass: ""
+    size: 100Mi
+    modes:
+      - ReadWriteOnce
+  cluster:
+    enabled: false
+    storageClass: ""
+    size: 10Gi
+    modes:
+      - ReadWriteOnce
+
+# enum: [ standalone, replica, cluster ]
+architecture: standalone
+
+# Single primary with N replicas and optional Sentinel
+replica:
+  sentinel:
+    enabled: false
+    count: 3
+    quorum: 2
+  replicas: 3
+
+# Sharded cluster
+cluster:
+  init: false
+  primary:
+    count: 3
+  replica:
+    # Number of replicas per primary
+    count: 1
+
+updateStrategy:
+  primary:
+    type: RollingUpdate
+  replica:
+    type: RollingUpdate
+  cluster:
+    type: RollingUpdate
+  sentinel:
+    type: RollingUpdate
+
+resources:
+  primary:
+    limits:
+      cpu: 100m
+      memory: 256Mi
+      ephemeralStorage: 2Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+      ephemeralStorage: 50Mi
+  replica:
+    limits:
+      cpu: 150m
+      memory: 256Mi
+      ephemeralStorage: 2Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+      ephemeralStorage: 50Mi
+  sentinel:
+    limits:
+      cpu: 150m
+      memory: 256Mi
+      ephemeralStorage: 2Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+      ephemeralStorage: 50Mi
+  cluster:
+    limits:
+      cpu: 150m
+      memory: 256Mi
+      ephemeralStorage: 2Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+      ephemeralStorage: 50Mi
+
+auth:
+  enabled: false
+  adminName: ""
+  # Not yet implemented
+  additionalUsers:
+    enable: false
+    labels: {}
+
+tls:
+  existingSecret:
+    primary: ""
+    replica: ""
+    cluster: ""
+    sentinel: ""
+  certManager:
+    enabled: false
+    csiDriver: false
+    issuer:
+      name: ""
+      kind: Issuer
+      group: cert-manager.io

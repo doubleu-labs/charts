@@ -1,0 +1,15 @@
+apiVersion: v2
+appVersion: 8.1.1-uul.3
+description: DoubleU Labs Valkey
+home: https://labs.doubleu.codes/charts/charts/valkey
+icon: https://avatars.githubusercontent.com/u/164458127
+maintainers:
+  - email: w@doubleu.codes
+    name: W Anders
+    url: https://www.doubleu.codes
+name: valkey
+sources:
+  - https://github.com/valkey-io/valkey
+  - https://github.com/doubleu-labs/charts
+type: application
+version: 0.1.0

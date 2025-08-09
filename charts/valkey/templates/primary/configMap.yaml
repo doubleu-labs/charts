@@ -1,0 +1,35 @@
+{{- if or
+  (eq .Values.architecture "standalone")
+  (eq .Values.architecture "replica")
+-}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "valkey.objectName" (list . "primary") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+data:
+  valkey.conf: |-
+    {{- include "valkey.config.common" . | nindent 4 }}
+    {{- include "valkey.config.common.tls" (list . .Values.tls.existingSecret.primary "6379") | nindent 4 }}
+    {{- if .Values.auth.enabled }}
+    aclfile /etc/valkey/auth.acl
+    {{- end }}
+    {{- if and
+      .Values.auth.enabled
+      (eq .Values.architecture "replica")
+      (ge (int .Values.replica.replicas) 1)
+    }}
+    aclFile /etc/valkey/replica.acl
+    {{- end }}
+  {{- if and
+    .Values.auth.enabled
+    (eq .Values.architecture "replica")
+    (ge (int .Values.replica.replicas) 1)
+  }}
+  replica.acl: |-
+    {{ printf "user replica on #%s +psync +replconf +ping" (include "valkey.config.replicaUserPassword" . | sha256sum) }}
+  {{- end }}
+{{- end -}}

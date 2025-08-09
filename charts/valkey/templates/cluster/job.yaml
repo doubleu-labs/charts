@@ -1,0 +1,86 @@
+{{- if and (eq .Values.architecture "cluster") .Values.cluster.init }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "valkey.objectName" (list . "cluster-init") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "valkey.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      {{- if .Values.image.pullSecrets }}
+      {{- include "valkey.imagePullSecrets" . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: ping-nodes
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+          args:
+            - /scripts/ping.sh
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+            {{- if or
+              .Values.tls.existingSecret.cluster
+              .Values.tls.certManager.enabled
+              (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+            }}
+            - mountPath: /run/secrets/valkey/tls
+              name: tls
+            {{- end }}
+      containers:
+        - name: init-nodes
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+          args:
+            - /scripts/init.sh
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+            {{- if or
+              .Values.tls.existingSecret.cluster
+              .Values.tls.certManager.enabled
+              (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+            }}
+            - mountPath: /run/secrets/valkey/tls
+              name: tls
+            {{- end }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "valkey.objectName" (list . "scripts") }}
+        {{- if or
+          .Values.tls.existingSecret.cluster
+          .Values.tls.certManager.enabled
+          (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+        }}
+        - name: tls
+          {{- if .Values.tls.certManager.csiDriver }}
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/common-name: {{ include "valkey.objectName" (list . "cluster-init-job") }}
+              csi.cert-manager.io/dns-names: {{ include "valkey.cluster.dnsNames" . | fromJsonArray | join "," }}
+              csi.cert-manager.io/fs-group: "1000"
+              csi.cert-manager.io/issuer-kind: {{ .Values.tls.certManager.issuer.kind }}
+              csi.cert-manager.io/issuer-name: {{ required "CertManager Issuer Name is required" .Values.tls.certManager.issuer.name }}
+              csi.cert-manager.io/key-usages: client auth,server auth
+          {{- else }}
+          secret:
+            secretName: {{ coalesce .Values.tls.existingSecret.cluster (include "valkey.objectName" (list . "cluster-server-certificate")) }}
+          {{- end }}
+        {{- end }}
+{{- end -}}

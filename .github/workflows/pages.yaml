@@ -13,6 +13,7 @@ env:
     charts/dns/README.md
     charts/lazyca/README.md
     charts/lazycnpgcluster/README.md
+    charts/valkey/README.md
 jobs:
 ################################################################################
   build:
@@ -29,7 +30,6 @@ jobs:
       with:
         token: ${{ github.token }}
         out_path: ${{ github.workspace }}/dist
-        out_path_not_empty: true
         files: ${{ env.FILES }}
     #===========================================================================
     - name: Store Pages Artifact

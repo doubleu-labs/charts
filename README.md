@@ -9,3 +9,4 @@ The following Charts are available:
 - [`dns`](./charts/dns/README.md)
 - [`lazyca`](./charts/lazyca/README.md)
 - [`lazycnpgcluster`](./charts/lazycnpgcluster/README.md)
+- [`valkey`](./charts/valkey/README.md)

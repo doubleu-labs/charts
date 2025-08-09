@@ -1,0 +1,148 @@
+{{- if and
+  (eq .Values.architecture "replica")
+  (ge (int .Values.replica.replicas) 1)
+-}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "valkey.objectName" (list . "replica") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: replica
+    {{- include "valkey.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replica.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: replica
+      {{- include "valkey.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "valkey.objectName" (list . "headless") }}
+  updateStrategy:
+    {{- toYaml .Values.updateStrategy.primary | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: replica
+        access-mode-read: "true"
+        {{- include "valkey.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/conf: {{ include (print .Template.BasePath "/replica/configMap.yaml") . | sha256sum }}
+        {{- if .Values.auth.enabled }}
+        checksum/aclAuth: {{ include (print .Template.BasePath "/configMap_acl-auth.yaml") . | sha256sum }}
+        checksum/replicaConf: {{ include (print .Template.BasePath "/replica/secret_replica-conf.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      serviceAccountName: {{ include "valkey.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      {{- if .Values.image.pullSecrets }}
+      {{- include "valkey.imagePullSecrets" . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: valkey
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /usr/sbin/valkey-server
+          args:
+            - /etc/valkey/valkey.conf
+            - --replica-announce-ip $(POD_NAME).{{ include "valkey.objectName" (list . "headless") }}.$(POD_NAMESPACE).svc.{{ .Values.service.clusterDomain }}
+          ports:
+            - name: valkey
+              containerPort: 6379
+          volumeMounts:
+            - mountPath: /etc/valkey
+              name: config
+            - mountPath: /data
+              name: data
+            {{- if or
+              .Values.tls.certManager.enabled
+              (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+              .Values.tls.existingSecret.replica
+            }}
+            - mountPath: /run/secrets/valkey/tls
+              name: tls
+            {{- end }}
+            {{- if .Values.auth.enabled }}
+            - mountPath: /run/secrets/valkey/config
+              name: secret-config
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.resources.replica.limits.cpu }}
+              memory: {{ .Values.resources.replica.limits.memory }}
+              ephemeral-storage: {{ .Values.resources.replica.limits.ephemeralStorage }}
+            requests:
+              cpu: {{ .Values.resources.replica.requests.cpu }}
+              memory: {{ .Values.resources.replica.requests.memory }}
+              ephemeral-storage: {{ .Values.resources.replica.requests.ephemeralStorage }}
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "replica") }}
+              {{- if .Values.auth.enabled }}
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "acl-auth") }}
+              {{- end }}
+        {{- if .Values.auth.enabled }}
+        - name: secret-config
+          secret:
+            secretName: {{ include "valkey.objectName" (list . "replica-conf") }}
+        {{- end }}
+        {{- if or
+          .Values.tls.certManager.enabled
+          (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+          .Values.tls.existingSecret.replica
+        }}
+        - name: tls
+          {{- if .Values.tls.certManager.csiDriver }}
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/common-name: {{ include "valkey.objectName" (list . "replica") }}
+              csi.cert-manager.io/dns-names: {{ include "valkey.replica.dnsNames" . | fromJsonArray | join "," }}
+              csi.cert-manager.io/fs-group: "1000"
+              csi.cert-manager.io/issuer-kind: {{ .Values.tls.certManager.issuer.kind }}
+              csi.cert-manager.io/issuer-name: {{ required "CertManager Issuer Name is required" .Values.tls.certManager.issuer.name }}
+              csi.cert-manager.io/key-usages: client auth,server auth
+          {{- else }}
+          secret:
+            secretName: {{ coalesce .Values.tls.existingSecret.replica (include "valkey.objectName" (list . "replica-server-certificate")) }}
+          {{- end }}
+        {{- end }}
+        {{- if not .Values.persistence.replica.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.persistence.replica.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        {{- if .Values.persistence.replica.storageClass }}
+        storageClassName: {{ .Values.persistence.replica.storageClass }}
+        {{- end }}
+        accessModes:
+          {{- toYaml .Values.persistence.replica.modes | nindent 10 }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.replica.size }}
+  {{- end }}
+{{- end -}}

@@ -1,0 +1,13 @@
+{{- if eq .Values.architecture "cluster" -}}
+{{- $len := (include "valkey.fullname" . | len) -}}
+{{- $nodes := (int (include "valkey.cluster.totalNodes" .)) -}}
+{{- if gt $nodes 9 -}}
+{{- if $len 10 -}}
+{{- fail "Release name cannot be more than 10 characters when more than 9 nodes are used. Optionally use 'fullnameOverride'. See README for details." -}}
+{{- end -}}
+{{- else -}}
+{{- if gt $len 12 -}}
+{{- fail "Release name cannot be more than 12 characters. Optionally use 'fullnameOverride'. See README for details." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

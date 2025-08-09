@@ -1,0 +1,13 @@
+{{- if .Values.auth.enabled -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "valkey.objectName" (list . "acl-auth") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+data:
+  auth.acl: |-
+    {{- include "valkey.config.acl.auth" . | nindent 4 }}
+{{- end -}}

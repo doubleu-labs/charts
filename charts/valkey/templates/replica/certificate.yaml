@@ -1,0 +1,38 @@
+{{- if and
+  (or
+    (eq .Values.architecture "standalone")
+    (eq .Values.architecture "replica")
+  )
+  .Values.tls.certManager.enabled
+  (not .Values.tls.certManager.csiDriver)
+  (not .Values.tls.existingSecret.primary)
+  (and
+    (eq .Values.architecture "replica")
+    (ge (int .Values.replica.replicas) 1)
+  )
+-}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "valkey.objectName" (list . "replica-server") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    {{- range $_, $name := (include "valkey.replica.dnsNames" . | fromJsonArray) }}
+    - {{ $name }}
+    {{- end }}
+  issuerRef:
+    name: {{ required "CertManager Issuer Name is required" .Values.tls.certManager.issuer.name }}
+    kind: {{ .Values.tls.certManager.issuer.kind }}
+    group: {{ .Values.tls.certManager.issuer.group }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: {{ include "valkey.objectName" (list . "replica-server-certificate") }}
+  usages:
+    - server auth
+    - client auth
+{{- end -}}

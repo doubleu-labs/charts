@@ -1,0 +1,18 @@
+{{- if eq .Values.architecture "cluster" -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "valkey.objectName" (list . "cluster") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+data:
+  valkey.conf: |-
+    {{- include "valkey.config.common" . | nindent 4 }}
+    cluster-enabled yes
+    cluster-config-file nodes.conf
+    cluster-port 16379
+    cluster-preferred-endpoint-type hostname
+    {{- include "valkey.config.common.tls" (list . .Values.tls.existingSecret.cluster "6379") | nindent 4 }}
+{{- end -}}

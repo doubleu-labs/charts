@@ -1,0 +1,172 @@
+{{- if eq .Values.architecture "cluster" -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "valkey.objectName" (list . "cluster") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cluster
+    {{- include "valkey.labels" . | nindent 4 }}
+spec:
+  replicas: {{ include "valkey.cluster.totalNodes" . }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: cluster
+      {{- include "valkey.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "valkey.objectName" (list . "headless") }}
+  updateStrategy:
+    {{- toYaml .Values.updateStrategy.cluster | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: cluster
+        access-mode-read: "true"
+        access-mode-read-write: "true"
+        {{- include "valkey.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/conf: {{ include (print .Template.BasePath "/cluster/configMap_cluster.yaml") . | sha256sum }}
+        {{- if .Values.auth.enabled }}
+        checksum/aclAuth: {{ include (print .Template.BasePath "/configMap_acl-auth.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      serviceAccountName: {{ include "valkey.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      {{- if .Values.image.pullSecrets }}
+      {{- include "valkey.imagePullSecrets" . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: update-ips
+          image: {{ include "valkey.kubeClientImage" . }}
+          imagePullPolicy: {{ .Values.kubeClientImage.pullPolicy }}
+          command:
+            - /bin/bash
+          args:
+            - /scripts/update-ips.sh
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              name: service-account-token
+      containers:
+        - name: valkey
+          image: {{ include "valkey.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/sbin/valkey-server
+          args:
+            - /etc/valkey/valkey.conf
+            - --cluster-announce-hostname $(POD_NAME).{{ include "valkey.fullname" . }}-headless.$(POD_NAMESPACE).svc.{{ .Values.service.clusterDomain }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 6379
+              name: valkey
+            - containerPort: 16379
+              name: gossip
+          volumeMounts:
+            - mountPath: /etc/valkey
+              name: config
+            - mountPath: /data
+              name: data
+            {{- if or
+              .Values.tls.certManager.enabled
+              (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+              .Values.tls.existingSecret.cluster
+            }}
+            - mountPath: /run/secrets/valkey/tls
+              name: tls
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ .Values.resources.cluster.limits.cpu }}
+              memory: {{ .Values.resources.cluster.limits.memory }}
+              ephemeral-storage: {{ .Values.resources.cluster.limits.ephemeralStorage }}
+            requests:
+              cpu: {{ .Values.resources.cluster.requests.cpu }}
+              memory: {{ .Values.resources.cluster.requests.memory }}
+              ephemeral-storage: {{ .Values.resources.cluster.requests.ephemeralStorage }}
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "cluster") }}
+              {{- if .Values.auth.enabled }}
+              - configMap:
+                  name: {{ include "valkey.objectName" (list . "acl-auth") }}
+              {{- end }}
+        {{- if or
+          .Values.tls.certManager.enabled
+          (and .Values.tls.certManager.enabled .Values.tls.certManager.csiDriver)
+          .Values.tls.existingSecret.cluster
+        }}
+        - name: tls
+          {{- if .Values.tls.certManager.csiDriver }}
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/common-name: {{ include "valkey.objectName" (list . "cluster") }}
+              csi.cert-manager.io/dns-names: {{ include "valkey.cluster.dnsNames" . | fromJsonArray | join "," }}
+              csi.cert-manager.io/fs-group: "1000"
+              csi.cert-manager.io/issuer-kind: {{ .Values.tls.certManager.issuer.kind }}
+              csi.cert-manager.io/issuer-name: {{ required "CertManager Issuer Name is required" .Values.tls.certManager.issuer.name }}
+              csi.cert-manager.io/key-usages: client auth,server auth
+          {{- else }}
+          secret:
+            secretName: {{ coalesce .Values.tls.existingSecret.cluster (include "valkey.objectName" (list . "cluster-server-certificate")) }}
+          {{- end }}
+        {{- end }}
+        - name: scripts
+          configMap:
+            name: {{ include "valkey.objectName" (list . "scripts") }}
+        - name: service-account-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+        {{- if not .Values.persistence.cluster.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.persistence.cluster.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        {{- if .Values.persistence.cluster.storageClass }}
+        storageClassName: {{ .Values.persistence.cluster.storageClass }}
+        {{- end }}
+        accessModes:
+          {{- toYaml .Values.persistence.cluster.modes | nindent 10 }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.primary.size }}
+  {{- end }}
+{{- end -}}

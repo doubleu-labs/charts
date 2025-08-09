@@ -1,0 +1,30 @@
+{{- if and
+  (eq .Values.architecture "replica")
+  .Values.replica.sentinel.enabled
+-}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "valkey.objectName" (list . "sentinel") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+data:
+  sentinel.conf: |-
+    {{- include "valkey.config.common" . | nindent 4 }}
+    {{- include "valkey.config.common.tls" (list . .Values.tls.existingSecret.sentinel "26379") | nindent 4 }}
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel monitor {{ printf
+      "primary %s-primary-0.%s-headless.%s.svc.%s 6379 %d"
+      (include "valkey.fullname" .)
+      (include "valkey.fullname" .)
+      .Release.Namespace
+      .Values.service.clusterDomain
+      (int .Values.replica.sentinel.quorum)
+    }}
+    sentinel down-after-milliseconds primary 3000
+    sentinel failover-timeout primary 10000
+    sentinel parallel-syncs primary 1
+{{- end -}}
